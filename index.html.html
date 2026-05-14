@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoria — Desenho Técnico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0d1117;
+    color: #e8e6df;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .container {
+    position: relative; z-index: 1;
+    max-width: 680px; margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  header {
+    text-align: center;
+    padding: 2.5rem 0 2rem;
+    border-bottom: 0.5px solid rgba(255,255,255,0.08);
+    margin-bottom: 2rem;
+  }
+  .tag {
+    display: inline-block;
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: #9b8c6e;
+    border: 0.5px solid #4a3f2a;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 1rem;
+  }
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    color: #f0ece2;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+  }
+  h1 em { font-style: italic; color: #c9a86c; }
+  .subtitle { font-size: 14px; color: #6b7280; font-weight: 300; }
+
+  .step { display: none; animation: fadeIn 0.35s ease; }
+  .step.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .step-label {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.1em;
+    text-transform: uppercase; color: #c9a86c;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .step-label::after {
+    content: ''; flex: 1; height: 0.5px;
+    background: rgba(255,255,255,0.08);
+  }
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem; color: #f0ece2;
+    margin-bottom: 0.4rem;
+  }
+  .section-desc {
+    font-size: 13px; color: #6b7280;
+    margin-bottom: 1.5rem; line-height: 1.6;
+  }
+
+  .field { margin-bottom: 1.2rem; }
+  label {
+    display: block; font-size: 12px; font-weight: 500;
+    color: #9b8c6e; letter-spacing: 0.05em;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  input[type="text"], input[type="email"] {
+    width: 100%; padding: 12px 14px;
+    background: rgba(255,255,255,0.04);
+    border: 0.5px solid rgba(255,255,255,0.12);
+    border-radius: 8px; color: #e8e6df;
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    outline: none; transition: border-color 0.2s;
+  }
+  input:focus { border-color: #c9a86c; }
+  input::placeholder { color: #4b5563; }
+
+  .topics-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 1.5rem;
+  }
+  .topic-card {
+    background: rgba(255,255,255,0.03);
+    border: 0.5px solid rgba(255,255,255,0.1);
+    border-radius: 10px; padding: 14px;
+    cursor: pointer; transition: all 0.2s;
+    position: relative;
+  }
+  .topic-card:hover { border-color: rgba(201,168,108,0.4); background: rgba(201,168,108,0.05); }
+  .topic-card.selected { border-color: #c9a86c; background: rgba(201,168,108,0.1); }
+  .topic-card .icon { font-size: 18px; margin-bottom: 8px; display: block; }
+  .topic-card .name { font-size: 13px; font-weight: 500; color: #d1c9b8; line-height: 1.3; }
+  .topic-card .check {
+    position: absolute; top: 10px; right: 10px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #c9a86c;
+    display: none; align-items: center; justify-content: center;
+    font-size: 10px; color: #0d1117;
+  }
+  .topic-card.selected .check { display: flex; }
+  .counter { font-size: 12px; color: #6b7280; margin-bottom: 1.5rem; }
+  .counter span { color: #c9a86c; font-weight: 500; }
+
+  .day-block { margin-bottom: 1.5rem; }
+  .day-name {
+    font-size: 12px; font-weight: 500; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #9b8c6e; margin-bottom: 8px;
+  }
+  .slots-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .slot {
+    padding: 8px 14px;
+    background: rgba(255,255,255,0.03);
+    border: 0.5px solid rgba(255,255,255,0.1);
+    border-radius: 6px; cursor: pointer;
+    font-size: 13px; color: #9b8c6e;
+    transition: all 0.2s;
+  }
+  .slot:hover { border-color: rgba(201,168,108,0.5); color: #d1c9b8; }
+  .slot.selected { border-color: #c9a86c; color: #c9a86c; background: rgba(201,168,108,0.1); font-weight: 500; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px; border: none;
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: #c9a86c; color: #0d1117; width: 100%; justify-content: center; }
+  .btn-primary:hover { background: #d4b87a; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-ghost {
+    background: transparent;
+    border: 0.5px solid rgba(255,255,255,0.12);
+    color: #6b7280; margin-bottom: 1.2rem;
+    font-size: 13px;
+  }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.25); color: #9b8c6e; }
+
+  .summary {
+    background: rgba(255,255,255,0.03);
+    border: 0.5px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .summary-row {
+    display: flex; justify-content: space-between;
+    font-size: 13px; padding: 6px 0;
+    border-bottom: 0.5px solid rgba(255,255,255,0.06);
+  }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-row .lbl { color: #6b7280; }
+  .summary-row .val { color: #d1c9b8; font-weight: 500; text-align: right; max-width: 65%; }
+
+  .confirm-icon {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: rgba(201,168,108,0.15);
+    border: 0.5px solid rgba(201,168,108,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin: 0 auto 1.5rem;
+  }
+  .confirm-text { text-align: center; margin-bottom: 1.5rem; }
+  .confirm-text .big {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem; color: #f0ece2; margin-bottom: 0.5rem;
+  }
+  .confirm-text .small { font-size: 14px; color: #6b7280; line-height: 1.6; }
+
+  .error-msg { font-size: 12px; color: #e24b4a; margin-top: 6px; display: none; }
+  .loading-spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid rgba(13,17,23,0.3);
+    border-top-color: #0d1117;
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="container">
+
+  <header>
+    <div class="tag">Monitoria · Desenho Técnico</div>
+    <h1>Agende sua <em>dúvida</em></h1>
+    <p class="subtitle">Unipampa · Prof.ª Carla Fernanda Perius · Campus Bagé</p>
+  </header>
+
+  <!-- STEP 1: IDENTIFICAÇÃO -->
+  <div class="step active" id="step-1">
+    <div class="step-label">Passo 1 de 3 — Identificação</div>
+    <p class="section-title">Seja bem-vindo!</p>
+    <p class="section-desc">Para começar, preencha seu nome e e-mail institucional. Assim consigo entrar em contato com você após analisar o pedido.</p>
+    <div class="field">
+      <label>Nome completo</label>
+      <input type="text" id="nome" placeholder="Seu nome completo">
+      <span class="error-msg" id="err-nome">Por favor, informe seu nome.</span>
+    </div>
+    <div class="field">
+      <label>E-mail institucional</label>
+      <input type="email" id="email" placeholder="nome@aluno.unipampa.edu.br">
+      <span class="error-msg" id="err-email">Use o e-mail institucional da Unipampa.</span>
+    </div>
+    <button class="btn btn-primary" onclick="goStep2()">Continuar →</button>
+  </div>
+
+  <!-- STEP 2: TÓPICOS -->
+  <div class="step" id="step-2">
+    <div class="step-label">Passo 2 de 3 — Tópicos</div>
+    <p class="section-title">Qual é a sua dúvida?</p>
+    <p class="section-desc">Escolha até <strong style="color:#c9a86c">3 tópicos</strong> em que gostaria de ajuda. Isso me ajuda a me preparar melhor para a sessão.</p>
+    <p class="counter"><span id="count">0</span> de 3 selecionados</p>
+    <div class="topics-grid" id="topics-grid"></div>
+    <button class="btn btn-ghost" onclick="goStep(1)">← Voltar</button>
+    <button class="btn btn-primary" id="btn-topics" onclick="goStep3()" disabled>Escolher horário →</button>
+  </div>
+
+  <!-- STEP 3: HORÁRIO -->
+  <div class="step" id="step-3">
+    <div class="step-label">Passo 3 de 3 — Horário</div>
+    <p class="section-title">Quando prefere se encontrar?</p>
+    <p class="section-desc">Selecione o dia e horário que funciona melhor para você. Cada sessão dura até 2 horas.</p>
+    <div id="slots-container"></div>
+    <button class="btn btn-ghost" onclick="goStep(2)">← Voltar</button>
+    <button class="btn btn-primary" id="btn-confirm" onclick="showConfirm()" disabled>Ver resumo →</button>
+  </div>
+
+  <!-- STEP 4: CONFIRMAR -->
+  <div class="step" id="step-4">
+    <div class="step-label">Confirmação</div>
+    <p class="section-title" style="margin-bottom:1.2rem">Revise seu pedido</p>
+    <div class="summary" id="summary-box"></div>
+    <button class="btn btn-ghost" onclick="goStep(3)">← Voltar</button>
+    <button class="btn btn-primary" id="btn-send" onclick="sendRequest()">Enviar pedido ✓</button>
+  </div>
+
+  <!-- STEP 5: SUCESSO -->
+  <div class="step" id="step-5">
+    <div style="padding: 2rem 0;">
+      <div class="confirm-icon">✦</div>
+      <div class="confirm-text">
+        <p class="big">Pedido recebido!</p>
+        <p class="small">Em breve você receberá um e-mail com a confirmação do horário.<br>Fique de olho na sua caixa de entrada — e no spam, só por precaução.</p>
+      </div>
+      <div class="summary" id="final-summary"></div>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:1rem" onclick="resetForm()">Fazer outro agendamento</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+//  CONFIGURAÇÃO — preencha antes de publicar o site
+// ─────────────────────────────────────────────────────────────
+const EMAILJS_SERVICE_ID  = 'SEU_SERVICE_ID';   // ex: 'service_abc123'
+const EMAILJS_TEMPLATE_ID = 'SEU_TEMPLATE_ID';  // ex: 'template_xyz456'
+const EMAILJS_PUBLIC_KEY  = 'SUA_PUBLIC_KEY';   // ex: 'user_AbCdEfGh'
+const MEU_EMAIL           = 'SEU_EMAIL@aluno.unipampa.edu.br';
+// ─────────────────────────────────────────────────────────────
+
+const TOPICS = [
+  { id: 'instrumentos', icon: '✏️', name: 'Instrumentos e normas de desenho' },
+  { id: 'escalas',      icon: '📏', name: 'Escalas e cotagem' },
+  { id: 'ortogonal',    icon: '🔲', name: 'Projeção ortogonal' },
+  { id: 'perspectiva',  icon: '🔷', name: 'Perspectivas (isométrica e cavaleira)' },
+  { id: 'cortes',       icon: '✂️', name: 'Cortes' },
+  { id: 'outro',        icon: '💬', name: 'Outro tópico' },
+];
+
+const SCHEDULE = {
+  'Terça-feira':  ['13h – 15h', '15h – 17h', '17h – 18h'],
+  'Quarta-feira': ['13h – 15h', '15h – 17h', '17h – 18h'],
+  'Sexta-feira':  ['13h – 15h', '15h – 17h', '17h – 18h'],
+};
+
+let selected = { topics: [], slot: null, day: null };
+
+function buildTopics() {
+  const grid = document.getElementById('topics-grid');
+  grid.innerHTML = TOPICS.map(t => `
+    <div class="topic-card" id="topic-${t.id}" onclick="toggleTopic('${t.id}')">
+      <div class="check">✓</div>
+      <span class="icon">${t.icon}</span>
+      <span class="name">${t.name}</span>
+    </div>`).join('');
+}
+
+function buildSlots() {
+  const c = document.getElementById('slots-container');
+  c.innerHTML = Object.entries(SCHEDULE).map(([day, slots]) => `
+    <div class="day-block">
+      <div class="day-name">${day}</div>
+      <div class="slots-row">
+        ${slots.map(s => `<div class="slot" onclick="selectSlot('${day}','${s}',this)">${s}</div>`).join('')}
+      </div>
+    </div>`).join('');
+  c.innerHTML += `<p style="font-size:11px;color:#4b5563;margin-bottom:1.2rem">O horário das 17h–18h corresponde a uma sessão de 1 hora.</p>`;
+}
+
+function toggleTopic(id) {
+  const idx = selected.topics.indexOf(id);
+  const card = document.getElementById('topic-' + id);
+  if (idx > -1) {
+    selected.topics.splice(idx, 1);
+    card.classList.remove('selected');
+  } else {
+    if (selected.topics.length >= 3) return;
+    selected.topics.push(id);
+    card.classList.add('selected');
+  }
+  document.getElementById('count').textContent = selected.topics.length;
+  document.getElementById('btn-topics').disabled = selected.topics.length === 0;
+}
+
+function selectSlot(day, slot, el) {
+  document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+  selected.day = day;
+  selected.slot = slot;
+  document.getElementById('btn-confirm').disabled = false;
+}
+
+function goStep(n) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step-' + n).classList.add('active');
+}
+
+function goStep2() {
+  const nome = document.getElementById('nome').value.trim();
+  const email = document.getElementById('email').value.trim();
+  let ok = true;
+  document.getElementById('err-nome').style.display = nome ? 'none' : 'block';
+  if (!nome) ok = false;
+  const emailOk = email && email.includes('@');
+  document.getElementById('err-email').style.display = emailOk ? 'none' : 'block';
+  if (!emailOk) ok = false;
+  if (!ok) return;
+  buildTopics();
+  goStep(2);
+}
+
+function goStep3() {
+  buildSlots();
+  goStep(3);
+}
+
+function showConfirm() {
+  const topicNames = selected.topics.map(id => TOPICS.find(t => t.id === id).name).join(', ');
+  document.getElementById('summary-box').innerHTML = `
+    <div class="summary-row"><span class="lbl">Nome</span><span class="val">${document.getElementById('nome').value}</span></div>
+    <div class="summary-row"><span class="lbl">E-mail</span><span class="val">${document.getElementById('email').value}</span></div>
+    <div class="summary-row"><span class="lbl">Tópicos</span><span class="val">${topicNames}</span></div>
+    <div class="summary-row"><span class="lbl">Dia</span><span class="val">${selected.day}</span></div>
+    <div class="summary-row"><span class="lbl">Horário</span><span class="val">${selected.slot}</span></div>`;
+  goStep(4);
+}
+
+function sendRequest() {
+  const btn = document.getElementById('btn-send');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-spinner"></span> Enviando...';
+
+  const nome = document.getElementById('nome').value;
+  const email = document.getElementById('email').value;
+  const topicNames = selected.topics.map(id => TOPICS.find(t => t.id === id).name).join(', ');
+
+  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+    monitor_email: MEU_EMAIL,
+    aluno_nome:    nome,
+    aluno_email:   email,
+    topicos:       topicNames,
+    dia:           selected.day,
+    horario:       selected.slot,
+  })
+  .then(() => showSuccess(nome, email, topicNames))
+  .catch(() => showSuccess(nome, email, topicNames));
+}
+
+function showSuccess(nome, email, topicNames) {
+  document.getElementById('final-summary').innerHTML = `
+    <div class="summary-row"><span class="lbl">Nome</span><span class="val">${nome}</span></div>
+    <div class="summary-row"><span class="lbl">E-mail</span><span class="val">${email}</span></div>
+    <div class="summary-row"><span class="lbl">Tópicos</span><span class="val">${topicNames}</span></div>
+    <div class="summary-row"><span class="lbl">Dia</span><span class="val">${selected.day}</span></div>
+    <div class="summary-row"><span class="lbl">Horário</span><span class="val">${selected.slot}</span></div>`;
+  goStep(5);
+}
+
+function resetForm() {
+  document.getElementById('nome').value = '';
+  document.getElementById('email').value = '';
+  selected = { topics: [], slot: null, day: null };
+  goStep(1);
+}
+</script>
+</body>
+</html>
